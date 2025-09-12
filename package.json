@@ -1,0 +1,40 @@
+{
+	"name": "@wuchuheng/npm-template",
+	"version": "0.0.2",
+	"main": "dist/main.js",
+	"description": "A CLI tool to initialize project from template.",
+	"bin": {
+		"@wuchuheng/npm-template": "./dist/cli.js"
+	},
+	"scripts": {
+		"build": "tsup",
+		"build:dev": "tsup --watch --sourcemap",
+		"prepare": "pnpm run build"
+	},
+	"keywords": [
+		"cli",
+		"init",
+		"project",
+		"template"
+	],
+	"files": [
+		"dist/",
+		"LICENSE",
+		"README.md"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/wuchuheng/com.wuchuheng.npm.template.git"
+	},
+	"bugs": {
+		"url": "https://github.com/wuchuheng/com.wuchuheng.npm.template/issues"
+	},
+	"homepage": "https://github.com/wuchuheng/com.wuchuheng.npm.template#readme",
+	"author": "wuchuheng",
+	"license": "MIT",
+	"packageManager": "pnpm@10.7.0",
+	"devDependencies": {
+		"tsup": "^8.5.0",
+		"typescript": "^5.9.2"
+	}
+}
