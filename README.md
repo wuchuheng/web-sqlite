@@ -1,68 +1,71 @@
-# @wuchuheng/npm-template
+# web-sqlite
 
-A modern template for creating and publishing npm libraries with TypeScript, pnpm, and best practices.
+A TypeScript-first runtime for working with SQLite compiled to WebAssembly from the browser or other Web runtimes. The library focuses on a small, expressive surface area inspired by the 2025 `frension` style: a single `openDatabase` entry point that returns functional helpers such as `exec`.
 
-## Features
+> **Status**: early design preview. The API surface is stable, but the underlying WASM plumbing is still being implemented.
 
--   TypeScript-first setup
--   CLI entrypoint support
--   Ready for publishing to npm
--   pnpm for fast, reproducible installs
--   Pre-configured build with [tsup](https://tsup.egoist.dev/)
--   MIT licensed
-
-## Getting Started
-
-### 1. Clone this template
+## Installation
 
 ```bash
-git clone https://github.com/wuchuheng/com.wuchuheng.npm.template.git your-lib-name
-cd your-lib-name
-```
-
-### 2. Install dependencies
-
-```bash
-pnpm install
-```
-
-### 3. Develop your library
-
--   Source code: `src/`
--   CLI entry: `src/cli.ts`
--   Main entry: `src/main.ts`
-
-### 4. Build
-
-```bash
-pnpm run build
-```
-
-### 5. Publish
-
-```bash
-pnpm publish --access public
+pnpm add web-sqlite
 ```
 
 ## Usage
 
-After publishing, users can install your library:
+```ts
+import websqlite from "web-sqlite";
 
-```bash
-pnpm add @wuchuheng/npm-template
+type Row = {
+  id: number;
+  name: string;
+};
+
+const sqlite = await websqlite("app.sqlite3");
+const rows = await sqlite.exec<Row[]>("select id, name from users");
 ```
 
-And use it in their projects:
+### Passing parameters
 
-```js
-import /* your exports */ "@wuchuheng/npm-template";
+`exec` accepts positional or named parameters via the `parameters` option:
+
+```ts
+const users = await sqlite.exec<Array<{ id: number; name: string }>>(
+  "select id, name from users where active = ?",
+  { parameters: [1] },
+);
+
+const projects = await sqlite.exec<Array<{ id: number; name: string }>>(
+  "select id, name from projects where slug = :slug",
+  { parameters: { slug: "web-sqlite" } },
+);
 ```
 
-Or run the CLI (if enabled):
+### Custom loaders
 
-```bash
-npx @wuchuheng/npm-template
+If you need custom fetching logic (for example, using the File System Access API), provide a `loader` function when opening the database. It will receive whatever you passed as the `source` argument and must resolve to an `ArrayBuffer`.
+
+```ts
+const sqlite = await websqlite(myFileHandle, {
+  loader: async (source) => {
+    if (source instanceof FileSystemFileHandle) {
+      const file = await source.getFile();
+      return file.arrayBuffer();
+    }
+
+    throw new TypeError("Unsupported loader source");
+  },
+});
 ```
+
+## API reference
+
+### `openDatabase(source, options?)`
+
+Returns a promise that resolves to a `Database` instance exposing:
+
+- `exec<TResult = Array<Record<string, unknown>>>(sql: string, options?: ExecOptions): Promise<TResult>` — execute a SQL statement with optional bind parameters and receive the result typed according to `TResult`.
+
+Additional helpers such as transactions and prepared statements will be added in future iterations.
 
 ## License
 
