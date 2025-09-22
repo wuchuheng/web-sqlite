@@ -54,7 +54,12 @@ export interface Database {
 /**
  * Possible inputs pointing at the underlying SQLite database source.
  */
-export type DatabaseSource = string | URL | ArrayBuffer | Uint8Array | ArrayBufferView;
+export type DatabaseSource =
+  | string
+  | URL
+  | ArrayBuffer
+  | Uint8Array
+  | ArrayBufferView;
 
 /**
  * Options accepted by {@link openDatabase}.

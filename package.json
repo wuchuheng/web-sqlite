@@ -10,7 +10,8 @@
 		"build": "tsup",
 		"build:dev": "tsup --watch --sourcemap",
 		"prepare": "pnpm run build",
-		"build:wasm": "tsx scripts/build-jswasm.ts"
+		"build:wasm": "tsx scripts/build-jswasm.ts",
+		"format": "prettier --write src/**/*.ts scripts/**/*.ts"
 	},
 	"keywords": [
 		"cli",
@@ -36,7 +37,9 @@
 	"packageManager": "pnpm@10.7.0",
 	"devDependencies": {
 		"@types/node": "^24.5.2",
+		"prettier": "^3.6.2",
 		"tsup": "^8.5.0",
+		"tsx": "^4.20.5",
 		"typescript": "^5.9.2"
 	}
 }

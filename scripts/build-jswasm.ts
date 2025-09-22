@@ -12,7 +12,7 @@ const runCommand = (cmd: string, args: string[]): Promise<void> => {
     childProcess.on("close", (code) =>
       code === 0
         ? resolve()
-        : reject(new Error(`Command failed with code ${code}`))
+        : reject(new Error(`Command failed with code ${code}`)),
     );
     childProcess.on("error", reject);
   });
