@@ -36,5 +36,8 @@
         "tsup.config.json"
       ]
     }
+  ],
+  "cSpell.words": [
+    "jswasm"
   ]
 }

@@ -9,7 +9,8 @@
 	"scripts": {
 		"build": "tsup",
 		"build:dev": "tsup --watch --sourcemap",
-		"prepare": "pnpm run build"
+		"prepare": "pnpm run build",
+		"build:wasm": "tsx scripts/build-jswasm.ts"
 	},
 	"keywords": [
 		"cli",
@@ -34,6 +35,7 @@
 	"license": "MIT",
 	"packageManager": "pnpm@10.7.0",
 	"devDependencies": {
+		"@types/node": "^24.5.2",
 		"tsup": "^8.5.0",
 		"typescript": "^5.9.2"
 	}
