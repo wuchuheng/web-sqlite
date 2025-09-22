@@ -1,0 +1,1 @@
+.clinerules/base_rules.md
