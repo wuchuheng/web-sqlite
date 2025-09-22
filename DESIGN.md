@@ -768,6 +768,10 @@ export default {
 -   [ ] Basic exec() and close() methods
 -   [ ] Parameter binding
 -   [ ] TypeScript support
+-   [ ] Create demos after this library project builded.
+    -   [ ] Create directory named examples.
+    -   [ ] place pure html/JavaScript example here.
+    -   [ ] add a new cmd `pnpm run start:examples` to start a local server to serve the examples with `npx http-server ./examples -c-1 -p 8080`
 
 ### 11.2 Version 1.1 (Polish)
 
