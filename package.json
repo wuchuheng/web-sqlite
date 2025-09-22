@@ -1,16 +1,17 @@
 {
 	"name": "web-sqlite",
 	"version": "0.0.1",
-	"main": "dist/main.js",
+        "main": "dist/main.mjs",
 	"description": "A CLI tool to initialize project from template.",
 	"bin": {
 		"web-sqlite": "./dist/cli.js"
 	},
-	"scripts": {
-		"build": "tsup",
-		"build:dev": "tsup --watch --sourcemap",
-		"prepare": "pnpm run build"
-	},
+        "scripts": {
+                "build": "tsup",
+                "build:dev": "tsup --watch --sourcemap",
+                "prepare": "pnpm run build",
+                "test": "vitest run --browser"
+        },
 	"keywords": [
 		"cli",
 		"init",
@@ -33,8 +34,11 @@
 	"author": "wuchuheng",
 	"license": "MIT",
 	"packageManager": "pnpm@10.7.0",
-	"devDependencies": {
-		"tsup": "^8.5.0",
-		"typescript": "^5.9.2"
-	}
+        "devDependencies": {
+                "@vitest/browser": "^1.6.0",
+                "playwright": "^1.49.0",
+                "tsup": "^8.5.0",
+                "typescript": "^5.9.2",
+                "vitest": "^1.6.0"
+        }
 }
