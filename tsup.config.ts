@@ -34,11 +34,11 @@ export default {
     // 1. Create jswasm directory in dist
     await mkdir("dist/jswasm", { recursive: true });
 
-    // 2. Define essential files to copy
+    // 2. Define essential files to copy - using bundler-friendly versions
     const filesToCopy = [
-      "src/jswasm/sqlite3-worker1.js",
-      "src/jswasm/sqlite3-worker1-promiser.js",
-      "src/jswasm/sqlite3.js",
+      "src/jswasm/sqlite3-worker1-bundler-friendly.mjs",
+      "src/jswasm/sqlite3-bundler-friendly.mjs",
+      "src/jswasm/sqlite3-worker1-promiser-bundler-friendly.js",
       "src/jswasm/sqlite3.wasm",
       "src/jswasm/sqlite3-opfs-async-proxy.js",
     ];
