@@ -18,7 +18,7 @@ export default {
   dts: true,
 
   // Generate source maps
-  sourcemap: true,
+  sourcemap: false,
 
   // Minify output
   minify: true,
