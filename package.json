@@ -1,12 +1,12 @@
 {
 	"name": "web-sqlite",
 	"version": "0.1.1",
-	"main": "dist/main.js",
+	"main": "dist/main.mjs",
 	"module": "dist/main.mjs",
-	"types": "dist/main.d.ts",
+	"types": "dist/main.d.mts",
 	"description": "A TypeScript-first runtime library for SQLite WebAssembly with OPFS persistence and functional API.",
 	"bin": {
-		"web-sqlite": "./dist/cli.js"
+		"web-sqlite": "./dist/cli.mjs"
 	},
 	"scripts": {
 		"build": "tsup",
