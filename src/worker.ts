@@ -1,9 +1,5 @@
 /**
- * Workeexport const createSQLiteWorker = async (): Promise<WorkerPromiseFunction> => {
-  // 1. Create worker instance - use absolute path from root
-  const worker = new Worker("/dist/sqlite3-worker1.js");
-
-  // 2. Initialize promiser for async communicationagement for SQLite OPFS Worker communication.
+ * Worker management for SQLite OPFS Worker communication.
  */
 
 import type { WorkerPromiseFunction } from "./types.js";
@@ -15,8 +11,9 @@ import { WebSQLiteError, createWorkerError } from "./errors.js";
  * @returns Promise resolving to worker promiser function
  */
 export const createSQLiteWorker = async (): Promise<WorkerPromiseFunction> => {
-  // 1. Create worker instance - use absolute path from root
-  const worker = new Worker("/dist/sqlite3-worker1.js");
+  // 1. Create worker instance using import.meta.url for proper path resolution
+  const workerUrl = new URL("./jswasm/sqlite3-worker1.js", import.meta.url);
+  const worker = new Worker(workerUrl);
 
   // 2. Initialize promiser for async communication
   const promiser = await initializeWorkerPromiser(worker);

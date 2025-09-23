@@ -2,8 +2,8 @@ export default {
   // Entry files for the build
   entry: ["src/main.ts", "src/cli.ts"],
 
-  // Output formats
-  format: ["cjs", "esm"],
+  // Output formats - ESM only for modern usage
+  format: ["esm"],
 
   // Specify output directory
   outDir: "dist",
@@ -23,15 +23,15 @@ export default {
   // Target ES2020 for modern browser support
   target: "es2020",
 
-  // Copy SQLite WASM files to dist
+  // Copy SQLite vendor files to organized jswasm directory
   async onSuccess() {
-    const fs = await import("fs/promises");
-    const path = await import("path");
+    const { mkdir, copyFile } = await import("fs/promises");
+    const { join } = await import("path");
 
-    // Copy SQLite worker files to dist
-    const srcDir = "src/jswasm";
-    const distDir = "dist";
+    // 1. Create jswasm directory in dist
+    await mkdir("dist/jswasm", { recursive: true });
 
+    // 2. Define essential files to copy
     const filesToCopy = [
       "sqlite3-worker1.js",
       "sqlite3-worker1-promiser.js",
@@ -40,13 +40,15 @@ export default {
       "sqlite3-opfs-async-proxy.js",
     ];
 
-    for (const file of filesToCopy) {
-      try {
-        await fs.copyFile(path.join(srcDir, file), path.join(distDir, file));
-        console.log(`Copied ${file} to dist/`);
-      } catch (error) {
-        console.warn(`Warning: Could not copy ${file}:`, error);
-      }
-    }
+    // 3. Copy files to organized structure
+    await Promise.all(
+      filesToCopy.map(async (file) => {
+        await copyFile(join("src/jswasm", file), join("dist/jswasm", file));
+      }),
+    );
+
+    console.log(
+      `✅ Copied ${filesToCopy.length} SQLite vendor files to dist/jswasm/`,
+    );
   },
 };
