@@ -1,9 +1,9 @@
 # Web-SQLite Library - Software Design Document
 
-**Version:** 1.0  
-**Date:** September 22, 2025  
+**Version:** 2.0  
+**Date:** September 23, 2025  
 **Author:** Development Team  
-**Status:** Draft
+**Status:** Refactored Design
 
 ## Table of Contents
 
@@ -25,19 +25,21 @@
 
 ### 1.1 Project Goals
 
-Web-SQLite is a TypeScript-first runtime library that provides a simple, functional API for working with SQLite databases compiled to WebAssembly in browser environments. The library emphasizes:
+Web-SQLite is a TypeScript-first runtime library that provides a clear, type-safe API for working with SQLite databases compiled to WebAssembly in browser environments. The library emphasizes:
 
--   **Simplicity**: Minimal API surface with just `exec` and `close` methods
--   **Functional Programming**: Pure functions, immutable data, and composable operations
--   **OPFS Persistence**: Reliable persistent storage via Origin Private File System
--   **Worker-Based**: Asynchronous execution via Web Workers to prevent UI blocking
+- **Type Safety**: Separate methods for different SQL operations with proper TypeScript types
+- **Functional Programming**: Pure functions, immutable data, and composable operations
+- **OPFS Persistence**: Reliable persistent storage via Origin Private File System
+- **Worker-Based**: Asynchronous execution via Web Workers to prevent UI blocking
+- **Clear Semantics**: Different methods for different database operations
 
 ### 1.2 Key Success Metrics
 
--   **API Simplicity**: Only 2 core methods (`exec`, `close`)
--   **Bundle Size**: Core library <30KB gzipped
--   **Performance**: <10ms execution time for simple queries
--   **Compatibility**: Chrome 86+, Safari 15.2+ (OPFS + Workers required)
+- **API Clarity**: 6 core methods (`query`, `queryOne`, `execute`, `run`, `transaction`, `close`)
+- **Type Safety**: Full TypeScript support with proper return types for each operation
+- **Bundle Size**: Core library <35KB gzipped
+- **Performance**: <10ms execution time for simple queries
+- **Compatibility**: Chrome 86+, Safari 15.2+ (OPFS + Workers required)
 
 ---
 
@@ -47,25 +49,28 @@ Web-SQLite is a TypeScript-first runtime library that provides a simple, functio
 
 Current SQLite WASM solutions lack:
 
--   Simple, functional APIs (most are object-oriented and complex)
--   Reliable persistent storage that works across browser sessions
--   Non-blocking execution patterns
--   Clean TypeScript integration
+- Clear separation between different types of SQL operations
+- Type-safe APIs that properly distinguish between queries and modifications
+- Reliable persistent storage that works across browser sessions
+- Non-blocking execution patterns
+- Clean TypeScript integration with meaningful type inference
 
 ### 2.2 Solution Approach
 
-A minimal, functional architecture that:
+A well-structured, type-safe architecture that:
 
--   Exposes only two methods: `exec()` and `close()`
--   Uses OPFS Worker strategy exclusively for reliability
--   Follows functional programming principles
--   Provides excellent TypeScript experience
+- Provides separate methods for different SQL operation types
+- Uses OPFS Worker strategy exclusively for reliability
+- Follows functional programming principles
+- Delivers excellent TypeScript experience with proper type inference
+- Supports transactions for atomic operations
 
 ### 2.3 Target Users
 
--   **Frontend Developers**: Building data-intensive web applications with simple needs
--   **PWA Developers**: Requiring offline-capable database solutions
--   **Functional Programming Advocates**: Preferring pure functions over OOP patterns
+- **Frontend Developers**: Building data-intensive web applications requiring type safety
+- **PWA Developers**: Requiring offline-capable database solutions
+- **TypeScript Developers**: Needing proper type inference and compile-time safety
+- **Functional Programming Advocates**: Preferring pure functions over OOP patterns
 
 ---
 
@@ -75,18 +80,30 @@ A minimal, functional architecture that:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  Functional API Layer                       │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
-│  │   webSqlite()   │  │   db.exec()     │  │  db.close()  │ │
-│  │   (factory)     │  │   (pure fn)     │  │  (cleanup)   │ │
-│  └─────────────────┘  └─────────────────┘  └──────────────┘ │
+│                  Type-Safe API Layer                        │
+│  ┌──────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────┐ │
+│  │ db.query<T>  │  │ db.queryOne │  │ db.execute  │  │ ... │ │
+│  │ (SELECT ops) │  │ (single row)│  │ (INSERT/UP) │  │     │ │
+│  └──────────────┘  └─────────────┘  └─────────────┘  └─────┘ │
+│  ┌──────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   db.run()   │  │db.transaction│  │ db.close()  │         │
+│  │ (DDL/util)   │  │ (atomic ops)│  │ (cleanup)   │         │
+│  └──────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────┐
+│                SQL Operation Router                         │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  • SQL Parsing  • Operation Classification           │   │
+│  │  • Type Detection  • Parameter Binding               │   │
+│  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────┐
 │                Worker Communication Layer                   │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  Promise-based Worker Messages                      │   │
-│  │  • SQL Execution  • Parameter Binding               │   │
+│  │  • SQL Execution  • Transaction Support             │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                                 │
@@ -94,7 +111,7 @@ A minimal, functional architecture that:
 │                SQLite OPFS Worker                          │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  • sqlite3-worker1.js  • OPFS VFS                   │   │
-│  │  • sqlite3.wasm        • Message Handling           │   │
+│  │  • sqlite3.wasm        • Transaction Handling       │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -129,9 +146,9 @@ const processQuery = (sql: string, params?: SqlParameters) =>
 
 No strategy pattern complexity - just one reliable implementation:
 
--   **OPFS Worker**: The only execution strategy
--   **No Fallbacks**: If OPFS + Workers not available, fail fast with clear error
--   **No Runtime Detection**: Assume modern browser environment
+- **OPFS Worker**: The only execution strategy
+- **No Fallbacks**: If OPFS + Workers not available, fail fast with clear error
+- **No Runtime Detection**: Assume modern browser environment
 
 ### 3.4 OPFS Implementation Details
 
@@ -218,7 +235,7 @@ const webSqlite = async (filename: string): Promise<Database> => {
 
 // Helper function - creates database interface
 const createDatabaseInterface = (
-    promiser: WorkerPromiseFunction
+    promiser: WorkerPromiseFunction,
 ): Database => ({
     exec: createExecFunction(promiser),
     close: createCloseFunction(promiser),
@@ -326,12 +343,12 @@ await promiser("open", {
 
 **Characteristics:**
 
--   ✅ Direct OPFS file access
--   ✅ True persistent storage
--   ✅ Simple integration
--   ✅ Proven reliability
--   ⚠️ Requires Worker thread
--   ⚠️ One database per connection
+- ✅ Direct OPFS file access
+- ✅ True persistent storage
+- ✅ Simple integration
+- ✅ Proven reliability
+- ⚠️ Requires Worker thread
+- ⚠️ One database per connection
 
 **2. OPFS SAH Pool VFS** (`vfs: "opfs-sahpool"`) - **Available but not used**
 
@@ -344,12 +361,12 @@ const poolUtil = await sqlite3.installOpfsSAHPoolVfs({
 
 **Characteristics:**
 
--   ✅ SharedAccessHandle pooling
--   ✅ Multiple database support
--   ✅ Better performance for many connections
--   ❌ More complex setup
--   ❌ Additional API surface
--   ❌ Overkill for simple use cases
+- ✅ SharedAccessHandle pooling
+- ✅ Multiple database support
+- ✅ Better performance for many connections
+- ❌ More complex setup
+- ❌ Additional API surface
+- ❌ Overkill for simple use cases
 
 #### 4.4.2 Why We Choose Standard OPFS VFS
 
@@ -393,14 +410,45 @@ worker.postMessage({
 // Main entry point - factory function
 export default function webSqlite(filename: string): Promise<Database>;
 
-// Database interface - only 2 methods
+// Database interface - 6 core methods for different operations
 export interface Database {
-    exec<TResult = Array<Record<string, unknown>>>(
+    // Query operations - return data
+    query<T = Record<string, unknown>>(
         sql: string,
-        parameters?: SqlParameters
-    ): Promise<TResult>;
+        parameters?: SqlParameters,
+    ): Promise<T[]>;
 
+    queryOne<T = Record<string, unknown>>(
+        sql: string,
+        parameters?: SqlParameters,
+    ): Promise<T | null>;
+
+    // Data modification operations - return metadata
+    execute(
+        sql: string,
+        parameters?: SqlParameters,
+    ): Promise<ModificationResult>;
+
+    // DDL and utility operations - return void
+    run(sql: string, parameters?: SqlParameters): Promise<void>;
+
+    // Transaction operations - atomic execution
+    transaction(
+        statements: Array<{
+            sql: string;
+            parameters?: SqlParameters;
+            type?: "query" | "execute" | "run";
+        }>,
+    ): Promise<Array<unknown>>;
+
+    // Resource cleanup
     close(): Promise<void>;
+}
+
+// Result types
+export interface ModificationResult {
+    changes: number;
+    lastInsertRowid: number | null;
 }
 
 // Parameter types
@@ -423,7 +471,10 @@ export type SqlValue =
 
 ```typescript
 export class WebSQLiteError extends Error {
-    constructor(message: string, public cause?: Error) {
+    constructor(
+        message: string,
+        public cause?: Error,
+    ) {
         super(message);
         this.name = "WebSQLiteError";
     }
@@ -438,39 +489,78 @@ import webSqlite from "web-sqlite";
 
 const db = await webSqlite("app.sqlite3");
 
-// Select multiple records
-type User = { id: number; name: string };
-const users = await db.exec<User[]>("SELECT id, name FROM users");
+// Type-safe query operations
+interface User {
+    id: number;
+    name: string;
+    email: string;
+}
+
+// Select multiple records with full type safety
+const users = await db.query<User>("SELECT id, name, email FROM users");
+console.log(users); // User[]
 
 // Select single record
-const oneUser = await db.exec<User>("SELECT id, name FROM users LIMIT 1");
+const user = await db.queryOne<User>("SELECT * FROM users WHERE id = ?", [1]);
+console.log(user); // User | null
 
-// With positional parameters
-const activeUsers = await db.exec<User[]>(
-    "SELECT id, name FROM users WHERE active = ? AND age > ?",
-    [true, 18]
+// Query with parameters
+const activeUsers = await db.query<User>(
+    "SELECT * FROM users WHERE active = ? AND age > ?",
+    [true, 18],
 );
 
-// With named parameters
-const userById = await db.exec<User[]>(
-    "SELECT id, name FROM users WHERE id = $userId",
-    { userId: 123 }
+// Data modification operations
+const insertResult = await db.execute(
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+    ["John", "john@example.com"],
+);
+console.log(
+    `Inserted ${insertResult.changes} rows, ID: ${insertResult.lastInsertRowid}`,
 );
 
-// Insert/Update/Delete operations
-await db.exec("INSERT INTO users (name, email) VALUES (?, ?)", [
-    "John",
-    "john@example.com",
+const updateResult = await db.execute(
+    "UPDATE users SET active = $active WHERE id = $id",
+    { active: false, id: 123 },
+);
+console.log(`Updated ${updateResult.changes} rows`);
+
+// DDL operations
+await db.run("CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT)");
+await db.run("CREATE INDEX idx_users_email ON users(email)");
+
+// Transaction operations
+const results = await db.transaction([
+    {
+        sql: "INSERT INTO users (name, email) VALUES (?, ?)",
+        parameters: ["Alice", "alice@example.com"],
+        type: "execute",
+    },
+    {
+        sql: "INSERT INTO users (name, email) VALUES (?, ?)",
+        parameters: ["Bob", "bob@example.com"],
+        type: "execute",
+    },
+    {
+        sql: "SELECT COUNT(*) as count FROM users",
+        type: "query",
+    },
 ]);
-await db.exec("UPDATE users SET active = $active WHERE id = $id", {
-    active: false,
-    id: 123,
-});
-await db.exec("DELETE FROM users WHERE id = ?", [123]);
 
 // Cleanup
 await db.close();
 ```
+
+### 5.4 Method-Specific Behaviors
+
+| Method          | SQL Types                 | Return Type                   | Use Case           |
+| --------------- | ------------------------- | ----------------------------- | ------------------ |
+| `query<T>()`    | SELECT                    | `Promise<T[]>`                | Multi-row queries  |
+| `queryOne<T>()` | SELECT                    | `Promise<T \| null>`          | Single-row queries |
+| `execute()`     | INSERT, UPDATE, DELETE    | `Promise<ModificationResult>` | Data changes       |
+| `run()`         | CREATE, DROP, ALTER, etc. | `Promise<void>`               | Schema changes     |
+| `transaction()` | Mixed                     | `Promise<Array<unknown>>`     | Atomic operations  |
+| `close()`       | N/A                       | `Promise<void>`               | Cleanup            |
 
 ---
 
@@ -480,27 +570,27 @@ await db.close();
 
 #### Phase 1: Core Foundation (Week 1)
 
--   [x] Functional type definitions
--   [ ] Worker creation and initialization
--   [ ] Basic OPFS Worker communication
--   [ ] Simple error handling
--   [ ] Unit test setup
+- [x] Functional type definitions
+- [ ] Worker creation and initialization
+- [ ] Basic OPFS Worker communication
+- [ ] Simple error handling
+- [ ] Unit test setup
 
 #### Phase 2: Core Implementation (Week 2)
 
--   [ ] Complete exec() function implementation
--   [ ] Parameter binding (positional and named)
--   [ ] Result transformation
--   [ ] close() function implementation
--   [ ] Integration testing
+- [ ] Complete exec() function implementation
+- [ ] Parameter binding (positional and named)
+- [ ] Result transformation
+- [ ] close() function implementation
+- [ ] Integration testing
 
 #### Phase 3: Refinement (Week 3)
 
--   [ ] Error handling improvements
--   [ ] TypeScript type refinements
--   [ ] Performance optimization
--   [ ] Cross-browser testing
--   [ ] Documentation
+- [ ] Error handling improvements
+- [ ] TypeScript type refinements
+- [ ] Performance optimization
+- [ ] Cross-browser testing
+- [ ] Documentation
 
 ### 6.2 Required Files
 
@@ -532,19 +622,17 @@ src/jswasm/
 
 **Core OPFS Support:**
 
--   `sqlite3.js` - Contains the main OPFS VFS implementation (`sqlite3_vfs named "opfs"`)
--   `sqlite3-opfs-async-proxy.js` - Dedicated worker for handling asynchronous OPFS file operations
+- `sqlite3.js` - Contains the main OPFS VFS implementation (`sqlite3_vfs named "opfs"`)
+- `sqlite3-opfs-async-proxy.js` - Dedicated worker for handling asynchronous OPFS file operations
 
 **Key OPFS Features Available:**
 
 1. **OPFS VFS** (`vfs: "opfs"`):
-
     - Standard OPFS implementation for direct file access
     - Requires Worker thread (cannot run in main thread)
     - Uses `sqlite3.oo1.OpfsDb` for database instances
 
 2. **OPFS SAH Pool** (`vfs: "opfs-sahpool"`):
-
     - SharedAccessHandle pool-based OPFS implementation
     - More efficient for multiple database connections
     - Available via `installOpfsSAHPoolVfs()` function
@@ -557,10 +645,10 @@ src/jswasm/
 **For Our Implementation:**
 We'll use the standard **OPFS VFS** (`vfs: "opfs"`) with `sqlite3-worker1.js` as it provides:
 
--   Reliable persistent storage
--   Automatic OPFS file management
--   Built-in worker-based execution
--   Simple integration with existing Promise wrapper
+- Reliable persistent storage
+- Automatic OPFS file management
+- Built-in worker-based execution
+- Simple integration with existing Promise wrapper
 
 ### 6.3 Minimal Dependencies
 
@@ -592,24 +680,24 @@ No runtime dependencies - completely self-contained.
 
 #### 7.2.1 Pure Function Benefits
 
--   Predictable performance characteristics
--   Easy to cache and memoize
--   No hidden side effects or memory leaks
--   Simple to test and optimize
+- Predictable performance characteristics
+- Easy to cache and memoize
+- No hidden side effects or memory leaks
+- Simple to test and optimize
 
 #### 7.2.2 Minimal API Surface
 
--   Smaller bundle size
--   Faster runtime initialization
--   Reduced complexity and maintenance
--   Better tree-shaking effectiveness
+- Smaller bundle size
+- Faster runtime initialization
+- Reduced complexity and maintenance
+- Better tree-shaking effectiveness
 
 #### 7.2.3 Single Strategy Approach
 
--   No runtime overhead for strategy selection
--   Optimized code path for OPFS Worker
--   Predictable performance profile
--   Simpler debugging and profiling
+- No runtime overhead for strategy selection
+- Optimized code path for OPFS Worker
+- Predictable performance profile
+- Simpler debugging and profiling
 
 ---
 
@@ -619,33 +707,33 @@ No runtime dependencies - completely self-contained.
 
 #### 8.1.1 SQL Injection Prevention
 
--   Mandatory parameter binding for all variables
--   No string concatenation in SQL allowed
--   Input validation for parameters
--   Clear error messages for binding failures
+- Mandatory parameter binding for all variables
+- No string concatenation in SQL allowed
+- Input validation for parameters
+- Clear error messages for binding failures
 
 #### 8.1.2 Data Protection
 
--   OPFS sandboxing for data isolation
--   No cross-origin data access
--   Secure worker communication
--   Automatic memory cleanup
+- OPFS sandboxing for data isolation
+- No cross-origin data access
+- Secure worker communication
+- Automatic memory cleanup
 
 ### 8.2 Reliability Features
 
 #### 8.2.1 Fail-Fast Philosophy
 
--   Clear error messages when OPFS/Workers unavailable
--   No silent fallbacks to unreliable strategies
--   Immediate validation of runtime requirements
--   Predictable behavior across environments
+- Clear error messages when OPFS/Workers unavailable
+- No silent fallbacks to unreliable strategies
+- Immediate validation of runtime requirements
+- Predictable behavior across environments
 
 #### 8.2.2 Data Integrity
 
--   ACID compliance through SQLite
--   Transaction support (future)
--   Corruption detection via SQLite
--   Consistent error handling
+- ACID compliance through SQLite
+- Transaction support (future)
+- Corruption detection via SQLite
+- Consistent error handling
 
 ---
 
@@ -655,24 +743,24 @@ No runtime dependencies - completely self-contained.
 
 #### 9.1.1 Unit Tests
 
--   Pure function testing
--   Parameter binding validation
--   Result transformation accuracy
--   Error handling scenarios
+- Pure function testing
+- Parameter binding validation
+- Result transformation accuracy
+- Error handling scenarios
 
 #### 9.1.2 Integration Tests
 
--   Worker communication testing
--   OPFS persistence validation
--   End-to-end query execution
--   Database lifecycle management
+- Worker communication testing
+- OPFS persistence validation
+- End-to-end query execution
+- Database lifecycle management
 
 #### 9.1.3 Browser Tests
 
--   Chrome 86+ compatibility
--   Safari 15.2+ compatibility
--   OPFS functionality testing
--   Worker support validation
+- Chrome 86+ compatibility
+- Safari 15.2+ compatibility
+- OPFS functionality testing
+- Worker support validation
 
 ### 9.2 Test Environment Requirements
 
@@ -745,10 +833,10 @@ export default {
 
 #### Simple Versioning
 
--   v1.0.0: Core functionality (exec, close)
--   v1.1.0: Performance improvements
--   v1.2.0: Additional convenience features
--   v2.0.0: Breaking changes (if ever needed)
+- v1.0.0: Core functionality (exec, close)
+- v1.1.0: Performance improvements
+- v1.2.0: Additional convenience features
+- v2.0.0: Breaking changes (if ever needed)
 
 #### Release Process
 
@@ -763,35 +851,35 @@ export default {
 
 ### 11.1 Version 1.0 (Core MVP)
 
--   [x] Functional API design
--   [ ] OPFS Worker implementation
--   [ ] Basic exec() and close() methods
--   [ ] Parameter binding
--   [ ] TypeScript support
--   [ ] Create demos after this library project builded.
-    -   [ ] Create directory named examples.
-    -   [ ] place pure html/JavaScript example here.
-    -   [ ] add a new cmd `pnpm run start:examples` to start a local server to serve the examples with `npx http-server ./examples -c-1 -p 8080`
+- [x] Functional API design
+- [x] OPFS Worker implementation
+- [x] Basic exec() and close() methods
+- [x] Parameter binding
+- [x] TypeScript support
+- [x] Create demos after this library project builded.
+    - [x] Create directory named examples.
+    - [x] place pure html/JavaScript example here.
+    - [x] add a new cmd `pnpm run start:examples` to start a local server to serve the examples with `npx http-server ./examples -c-1 -p 8080`
 
 ### 11.2 Version 1.1 (Polish)
 
--   [ ] Performance optimizations
--   [ ] Better error messages
--   [ ] Documentation improvements
--   [ ] Browser compatibility testing
+- [ ] Performance optimizations
+- [ ] Better error messages
+- [ ] Documentation improvements
+- [ ] Browser compatibility testing
 
 ### 11.3 Version 1.2 (Convenience)
 
--   [ ] Transaction helper functions
--   [ ] Prepared statement syntax sugar
--   [ ] Query result streaming for large datasets
+- [ ] Transaction helper functions
+- [ ] Prepared statement syntax sugar
+- [ ] Query result streaming for large datasets
 
 ### 11.4 Long-term (if needed)
 
--   Consider prepared statements API
--   Potential transaction helpers
--   Performance monitoring utilities
--   Migration utilities
+- Consider prepared statements API
+- Potential transaction helpers
+- Performance monitoring utilities
+- Migration utilities
 
 **Note:** The goal is to keep the library minimal and focused. Most advanced features should be built on top of this library rather than included in it.
 
@@ -812,13 +900,13 @@ _Note: Firefox not supported due to lack of OPFS_
 
 ### Appendix B: OPFS File Reference
 
-| File                          | Size   | Purpose                        | When Loaded             |
-| ----------------------------- | ------ | ------------------------------ | ----------------------- |
-| `sqlite3-worker1.js`          | ~200KB | Main worker with SQLite + OPFS | Always (main worker)    |
-| `sqlite3-worker1-promiser.js` | ~10KB  | Promise wrapper                | Always (main thread)    |
-| `sqlite3.js`                  | ~500KB | Complete SQLite runtime        | Alternative to worker   |
-| `sqlite3.wasm`                | ~1MB   | SQLite WebAssembly binary      | Always (by worker)      |
-| `sqlite3-opfs-async-proxy.js` | ~15KB  | OPFS async operations          | Auto-loaded by OPFS VFS |
+| File                                     | Size   | Purpose                        | When Loaded             |
+| ---------------------------------------- | ------ | ------------------------------ | ----------------------- |
+| `src/jswasm/sqlite3-worker1.js`          | ~200KB | Main worker with SQLite + OPFS | Always (main worker)    |
+| `src/jswasm/sqlite3-worker1-promiser.js` | ~10KB  | Promise wrapper                | Always (main thread)    |
+| `src/jswasm/sqlite3.js`                  | ~500KB | Complete SQLite runtime        | Alternative to worker   |
+| `src/jswasm/sqlite3.wasm`                | ~1MB   | SQLite WebAssembly binary      | Always (by worker)      |
+| `src/jswasm/sqlite3-opfs-async-proxy.js` | ~15KB  | OPFS async operations          | Auto-loaded by OPFS VFS |
 
 **Note:** Our library only directly uses the first 4 files. The async proxy is automatically managed by the OPFS VFS.
 
@@ -846,18 +934,18 @@ const targets = {
 
 **File Locations in OPFS:**
 
--   Database files are stored in the browser's Origin-Private File System
--   Path: `navigator.storage.getDirectory()` → `/your-filename.sqlite3`
--   Not accessible via regular file system APIs
--   Persistent across browser sessions
--   Isolated per origin (domain)
+- Database files are stored in the browser's Origin-Private File System
+- Path: `navigator.storage.getDirectory()` → `/your-filename.sqlite3`
+- Not accessible via regular file system APIs
+- Persistent across browser sessions
+- Isolated per origin (domain)
 
 **OPFS Limitations:**
 
--   Only available in Worker contexts (for most operations)
--   Chrome 86+ and Safari 15.2+ only
--   Cannot be accessed from main thread synchronously
--   File handles must be properly closed to avoid locks
+- Only available in Worker contexts (for most operations)
+- Chrome 86+ and Safari 15.2+ only
+- Cannot be accessed from main thread synchronously
+- File handles must be properly closed to avoid locks
 
 **Debugging OPFS:**
 

@@ -1,105 +1,118 @@
 /**
- * Entry point for the WebSQLite API.
+ * Web-SQLite - A TypeScript-first runtime library for SQLite WebAssembly.
+ * Provides a clear, type-safe API with separate methods for different database operations.
  */
 
-/**
- * Supported parameter value types that can be bound to a SQL statement.
- */
-export type SqlValue =
-  | string
-  | number
-  | bigint
-  | boolean
-  | null
-  | Uint8Array
-  | ArrayBufferView
-  | Date;
+// Re-export types for public API
+export type {
+  Database,
+  SqlValue,
+  SqlParameters,
+  ModificationResult,
+  TransactionStatement,
+  WebSQLiteError,
+} from "./types.js";
+
+import type { Database, WorkerPromiseFunction } from "./types.js";
+import { validateBrowserSupport, WebSQLiteError } from "./errors.js";
+import { createSQLiteWorker, openDatabase, closeDatabase } from "./worker.js";
+import {
+  createQueryFunction,
+  createQueryOneFunction,
+  createExecuteFunction,
+  createRunFunction,
+  createTransactionFunction,
+} from "./exec.js";
 
 /**
- * Structure of the bind parameters accepted by {@link Database.exec}.
- */
-export type SqlParameters =
-  | ReadonlyArray<SqlValue>
-  | Readonly<Record<string, SqlValue>>;
-
-/**
- * Configuration options for the {@link Database.exec} call.
- */
-export interface ExecOptions {
-  /**
-   * Optional positional (array) or named (object) parameters to bind to the statement.
-   */
-  readonly parameters?: SqlParameters;
-}
-
-/**
- * Represents an opened database handle backed by SQLite compiled to WebAssembly.
- */
-export interface Database {
-  /**
-   * Execute a SQL statement and receive a typed result.
-   *
-   * @typeParam TResult - The expected shape of the execution result. The default is an
-   * array of objects keyed by column name.
-   * @param sql - The SQL statement to execute.
-   * @param options - Optional configuration such as bind parameters.
-   * @returns A promise resolving to a value shaped according to {@link TResult}.
-   */
-  exec<TResult = Array<Record<string, unknown>>>(
-    sql: string,
-    options?: ExecOptions,
-  ): Promise<TResult>;
-}
-
-/**
- * Possible inputs pointing at the underlying SQLite database source.
- */
-export type DatabaseSource =
-  | string
-  | URL
-  | ArrayBuffer
-  | Uint8Array
-  | ArrayBufferView;
-
-/**
- * Options accepted by {@link openDatabase}.
- */
-export interface OpenDatabaseOptions {
-  /**
-   * Custom loader responsible for turning {@link DatabaseSource} into raw bytes.
-   * This is primarily useful for environments that require bespoke fetching logic.
-   */
-  readonly loader?: (source: DatabaseSource) => Promise<ArrayBuffer>;
-}
-
-/**
- * Open a SQLite database from the provided {@link DatabaseSource}. The function resolves
- * to an object exposing the high-level database helpers, currently limited to
- * {@link Database.exec}.
+ * Creates a database interface with separate methods for different operations.
  *
- * @param source - Identifier pointing at the SQLite database. This can be a URL, file
- * path, or raw binary buffer.
- * @param options - Optional advanced configuration.
+ * @param promiser - Worker promiser function
+ * @returns Database interface with type-safe methods
  */
-export const openDatabase = async (
-  source: DatabaseSource,
-  options?: OpenDatabaseOptions,
-): Promise<Database> => {
-  if (!source) {
-    throw new Error("A database source must be provided to openDatabase().");
+const createDatabaseInterface = (
+  promiser: WorkerPromiseFunction,
+): Database => ({
+  // Query operations - return typed data
+  query: createQueryFunction(promiser),
+  queryOne: createQueryOneFunction(promiser),
+
+  // Data modification operations - return metadata
+  execute: createExecuteFunction(promiser),
+
+  // DDL and utility operations - return void
+  run: createRunFunction(promiser),
+
+  // Transaction operations - atomic execution
+  transaction: createTransactionFunction(promiser),
+
+  // Resource cleanup
+  close: async (): Promise<void> => {
+    // 1. Close database connection
+    await closeDatabase(promiser);
+  },
+});
+
+/**
+ * Opens a SQLite database with OPFS persistence using Web Workers.
+ * This is the main entry point for the Web-SQLite library.
+ *
+ * @param filename - Name of the SQLite database file in OPFS
+ * @returns Promise resolving to Database interface with type-safe methods
+ * @throws {WebSQLiteError} If browser doesn't support required features
+ *
+ * @example
+ * ```typescript
+ * import webSqlite from 'web-sqlite';
+ *
+ * const db = await webSqlite('app.sqlite3');
+ *
+ * // Type-safe query operations
+ * interface User { id: number; name: string; }
+ * const users = await db.query<User>('SELECT id, name FROM users');
+ * const user = await db.queryOne<User>('SELECT * FROM users WHERE id = ?', [1]);
+ *
+ * // Data modification operations
+ * const result = await db.execute('INSERT INTO users (name) VALUES (?)', ['John']);
+ * console.log(`Inserted ${result.changes} rows, ID: ${result.lastInsertRowid}`);
+ *
+ * // DDL operations
+ * await db.run('CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT)');
+ *
+ * // Transaction operations
+ * await db.transaction([
+ *   { sql: 'INSERT INTO users (name) VALUES (?)', parameters: ['Alice'], type: 'execute' },
+ *   { sql: 'INSERT INTO users (name) VALUES (?)', parameters: ['Bob'], type: 'execute' },
+ * ]);
+ *
+ * // Clean up
+ * await db.close();
+ * ```
+ */
+const webSqlite = async (filename: string): Promise<Database> => {
+  // 1. Validate browser support
+  validateBrowserSupport();
+
+  // 2. Validate filename
+  if (!filename || typeof filename !== "string") {
+    throw new WebSQLiteError("Filename must be a non-empty string");
   }
 
-  // The actual SQLite WASM runtime integration is pending implementation.
-  // For now, we surface a placeholder that makes the contract explicit without
-  // silently doing nothing.
-  const exec: Database["exec"] = async () => {
-    throw new Error(
-      "web-sqlite: exec() is not implemented yet. The API surface is finalized, " +
-        "but the WASM runtime wiring is still in progress.",
-    );
-  };
+  try {
+    // 3. Create and initialize worker
+    const promiser = await createSQLiteWorker();
 
-  return { exec } satisfies Database;
+    // 4. Open database with OPFS persistence
+    await openDatabase(promiser, filename);
+
+    // 5. Return database interface with type-safe methods
+    return createDatabaseInterface(promiser);
+  } catch (error) {
+    if (error instanceof WebSQLiteError) {
+      throw error;
+    }
+    throw new WebSQLiteError("Failed to initialize database", error as Error);
+  }
 };
 
-export default openDatabase;
+export default webSqlite;

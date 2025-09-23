@@ -1,8 +1,10 @@
 {
 	"name": "web-sqlite",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"main": "dist/main.js",
-	"description": "A CLI tool to initialize project from template.",
+	"module": "dist/main.mjs",
+	"types": "dist/main.d.ts",
+	"description": "A TypeScript-first runtime library for SQLite WebAssembly with OPFS persistence and functional API.",
 	"bin": {
 		"web-sqlite": "./dist/cli.js"
 	},
@@ -11,13 +13,18 @@
 		"build:dev": "tsup --watch --sourcemap",
 		"prepare": "pnpm run build",
 		"build:wasm": "tsx scripts/build-jswasm.ts",
-		"format": "prettier --write src/**/*.ts scripts/**/*.ts"
+		"format": "prettier --write src/**/*.ts scripts/**/*.ts",
+		"start:examples": "tsx scripts/secure-server.ts"
 	},
 	"keywords": [
-		"cli",
-		"init",
-		"project",
-		"template"
+		"sqlite",
+		"wasm",
+		"webassembly",
+		"database",
+		"opfs",
+		"worker",
+		"typescript",
+		"functional"
 	],
 	"files": [
 		"dist/",
@@ -37,6 +44,7 @@
 	"packageManager": "pnpm@10.7.0",
 	"devDependencies": {
 		"@types/node": "^24.5.2",
+		"http-server": "^14.1.1",
 		"prettier": "^3.6.2",
 		"tsup": "^8.5.0",
 		"tsx": "^4.20.5",
