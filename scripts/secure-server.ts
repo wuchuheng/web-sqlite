@@ -4,6 +4,7 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 import url from "url";
+import { inColor, Color } from "../src/util/color";
 
 const PORT = 7411;
 
@@ -26,17 +27,6 @@ function getMimeType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
   return mimeTypes[ext] || "application/octet-stream";
 }
-
-// Centralized logging system
-enum Color {
-  red = "\x1b[31m",
-  green = "\x1b[32m",
-  bold = "\x1b[1m",
-  reset = "\x1b[0m",
-}
-
-const inColor = (text: string, ...colors: Color[]) =>
-  colors.join("") + text + Color.reset;
 
 function formatTimestamp(): string {
   const now = new Date();

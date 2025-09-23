@@ -1,3 +1,6 @@
+import { Color, inColor } from "./src/util/color";
+import fs from "fs";
+
 export default {
   // Entry files for the build
   entry: ["src/main.ts", "src/cli.ts"],
@@ -33,17 +36,34 @@ export default {
 
     // 2. Define essential files to copy
     const filesToCopy = [
-      "sqlite3-worker1.js",
-      "sqlite3-worker1-promiser.js",
-      "sqlite3.js",
-      "sqlite3.wasm",
-      "sqlite3-opfs-async-proxy.js",
+      "src/jswasm/sqlite3-worker1.js",
+      "src/jswasm/sqlite3-worker1-promiser.js",
+      "src/jswasm/sqlite3.js",
+      "src/jswasm/sqlite3.wasm",
+      "src/jswasm/sqlite3-opfs-async-proxy.js",
     ];
 
     // 3. Copy files to organized structure
     await Promise.all(
-      filesToCopy.map(async (file) => {
-        await copyFile(join("src/jswasm", file), join("dist/jswasm", file));
+      filesToCopy.map(async (from) => {
+        const fileName = from.split("/").pop()!;
+        const to = join("dist/jswasm", fileName);
+        await copyFile(from, to);
+        const fileSize = fs.statSync(from).size;
+        // convert size in prefect human readable format
+        // e.g., 1024 -> 1 KB, 1048576 -> 1 MB
+        let humanReadableSize: string;
+        if (fileSize < 1024) {
+          humanReadableSize = `${fileSize} B`;
+        } else if (fileSize < 1048576) {
+          humanReadableSize = `${(fileSize / 1024).toFixed(2)} KB`;
+        } else {
+          humanReadableSize = `${(fileSize / 1048576).toFixed(2)} MB`;
+        }
+
+        console.log(
+          `${inColor("COPY", Color.green, Color.bold)} ${from} to ${to} ${inColor(humanReadableSize, Color.green)}`,
+        );
       }),
     );
 
