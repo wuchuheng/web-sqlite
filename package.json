@@ -1,6 +1,6 @@
 {
 	"name": "@wuchuheng/web-sqlite",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"main": "dist/main.mjs",
 	"module": "dist/main.mjs",
 	"types": "dist/main.d.mts",
