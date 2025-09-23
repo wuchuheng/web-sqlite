@@ -1,6 +1,6 @@
 {
 	"name": "@wuchuheng/web-sqlite",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"main": "dist/main.mjs",
 	"module": "dist/main.mjs",
 	"types": "dist/main.d.mts",
@@ -15,7 +15,7 @@
 		"build:wasm": "tsx scripts/build-jswasm.ts",
 		"format": "prettier --write src/**/*.ts scripts/**/*.ts",
 		"start:examples": "tsx scripts/secure-server.ts",
-		"publish": "pnpm publish --access public"
+		"release": "pnpm publish --access public"
 	},
 	"keywords": [
 		"sqlite",
