@@ -1,5 +1,4 @@
 import { Color, inColor } from "./src/util/color";
-import fs from "fs";
 
 export default {
   // Entry files for the build
@@ -28,47 +27,55 @@ export default {
 
   // Copy SQLite vendor files to organized jswasm directory
   async onSuccess() {
-    const { mkdir, copyFile } = await import("fs/promises");
-    const { join } = await import("path");
+    const { mkdir, cp, readdir, stat } = await import("fs/promises");
+    const { join, relative } = await import("path");
 
-    // 1. Create jswasm directory in dist
-    await mkdir("dist/jswasm", { recursive: true });
+    const sourceDir = "src/jswasm";
+    const targetDir = "dist/jswasm";
 
-    // 2. Define essential files to copy - using bundler-friendly versions
-    const filesToCopy = [
-      "src/jswasm/sqlite3-worker1-bundler-friendly.mjs",
-      "src/jswasm/sqlite3-bundler-friendly.mjs",
-      "src/jswasm/sqlite3-worker1-promiser-bundler-friendly.js",
-      "src/jswasm/sqlite3.wasm",
-      "src/jswasm/sqlite3-opfs-async-proxy.js",
-    ];
+    await mkdir(targetDir, { recursive: true });
+    await cp(sourceDir, targetDir, { recursive: true });
 
-    // 3. Copy files to organized structure
-    await Promise.all(
-      filesToCopy.map(async (from) => {
-        const fileName = from.split("/").pop()!;
-        const to = join("dist/jswasm", fileName);
-        await copyFile(from, to);
-        const fileSize = fs.statSync(from).size;
-        // convert size in prefect human readable format
-        // e.g., 1024 -> 1 KB, 1048576 -> 1 MB
-        let humanReadableSize: string;
-        if (fileSize < 1024) {
-          humanReadableSize = `${fileSize} B`;
-        } else if (fileSize < 1048576) {
-          humanReadableSize = `${(fileSize / 1024).toFixed(2)} KB`;
-        } else {
-          humanReadableSize = `${(fileSize / 1048576).toFixed(2)} MB`;
-        }
+    const walkFiles = async (directory: string): Promise<string[]> => {
+      const entries = await readdir(directory, { withFileTypes: true });
+      const files = await Promise.all(
+        entries.map(async (entry) => {
+          const entryPath = join(directory, entry.name);
+          if (entry.isDirectory()) {
+            return walkFiles(entryPath);
+          }
+          return [entryPath];
+        }),
+      );
+      return files.flat();
+    };
 
-        console.log(
-          `${inColor("COPY", Color.green, Color.bold)} ${from} to ${to} ${inColor(humanReadableSize, Color.green)}`,
-        );
-      }),
-    );
+    const formatSize = (size: number): string => {
+      if (size < 1024) {
+        return `${size} B`;
+      }
+      if (size < 1048576) {
+        return `${(size / 1024).toFixed(2)} KB`;
+      }
+      return `${(size / 1048576).toFixed(2)} MB`;
+    };
+
+    const files = await walkFiles(sourceDir);
+    let totalSize = 0;
+
+    for (const file of files) {
+      const { size } = await stat(file);
+      totalSize += size;
+      const relativePath = relative(sourceDir, file);
+      const destination = join(targetDir, relativePath);
+
+      console.log(
+        `${inColor("COPY", Color.green, Color.bold)} ${file} -> ${destination} ${inColor(formatSize(size), Color.green)}`,
+      );
+    }
 
     console.log(
-      `✅ Copied ${filesToCopy.length} SQLite vendor files to dist/jswasm/`,
+      `✅ Copied ${files.length} SQLite vendor files (${formatSize(totalSize)}) to ${targetDir}/`,
     );
   },
 };

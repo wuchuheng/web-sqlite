@@ -44,11 +44,12 @@
 	"license": "MIT",
 	"packageManager": "pnpm@10.7.0",
 	"devDependencies": {
-		"@types/node": "^24.5.2",
-		"http-server": "^14.1.1",
-		"prettier": "^3.6.2",
-		"tsup": "^8.5.0",
-		"tsx": "^4.20.5",
-		"typescript": "^5.9.2"
-	}
+                "@playwright/test": "^1.48.2",
+                "@types/node": "^24.5.2",
+                "http-server": "^14.1.1",
+                "prettier": "^3.6.2",
+                "tsup": "^8.5.0",
+                "tsx": "^4.20.5",
+                "typescript": "^5.9.2"
+        }
 }
