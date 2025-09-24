@@ -7,6 +7,8 @@ export default defineConfig({
       insertTypesEntry: true,
     }),
   ],
+  // Ensure WASM files are treated as assets
+  assetsInclude: ["**/*.wasm"],
   build: {
     // Automatically clean the output directory before build
     emptyOutDir: true,
@@ -25,6 +27,13 @@ export default defineConfig({
       output: {
         // Global variables for any external dependencies
         globals: {},
+        // Copy WASM file to assets directory
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith(".wasm")) {
+            return "assets/[name][extname]";
+          }
+          return "assets/[name]-[hash][extname]";
+        },
       },
     },
     // Generate sourcemaps for better debugging

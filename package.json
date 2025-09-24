@@ -21,10 +21,11 @@
     "build:dev": "tsc && vite build --sourcemap",
     "preview": "vite preview",
     "prepublishOnly": "npm run build",
-    "prepare": "pnpm run build",
-    "release": "pnpm publish --access public"
+    "release": "pnpm publish --access public",
+    "start:examples": "tsx scripts/secure-server.ts"
   },
   "devDependencies": {
+    "@types/node": "^24.5.2",
     "typescript": "~5.8.3",
     "vite": "^7.1.7",
     "vite-plugin-dts": "^4.0.0"
