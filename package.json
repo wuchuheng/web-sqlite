@@ -1,15 +1,30 @@
 {
-  "name": "vite-libary",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@wuchuheng/web-sqlite",
+  "version": "0.0.1",
   "type": "module",
+  "description": "A browser ES module library",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "module": "./dist/index.es.js",
+  "types": "./dist/main.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "import": "./dist/index.es.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsc && vite build --sourcemap false",
+    "build:dev": "tsc && vite build --sourcemap",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "typescript": "~5.8.3",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "vite-plugin-dts": "^4.0.0"
   }
 }
