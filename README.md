@@ -1,5 +1,3 @@
-# Web-SQLite
-
 A TypeScript-first runtime library for SQLite WebAssembly with OPFS persistence and functional API.
 
 ## Features

@@ -8,6 +8,11 @@ import { inColor, Color } from "../src/util/color";
 
 const PORT = 7411;
 
+// 1. Parse command line arguments
+const args = process.argv.slice(2);
+const basePath = args[0] || "./";
+const absoluteBasePath = path.resolve(basePath);
+
 // MIME type mapping
 const mimeTypes: Record<string, string> = {
   ".html": "text/html",
@@ -83,17 +88,19 @@ const server = http.createServer((req, res) => {
   // 2. Core processing
   // 2.1 Parse URL and determine file path
   const parsedUrl = url.parse(requestUrl);
-  let pathname = `.${parsedUrl.pathname}`;
+  let pathname = path.join(basePath, parsedUrl.pathname || "");
 
   // 2.2 Handle directory requests
-  if (pathname.endsWith("/")) {
+  if (
+    pathname.endsWith("/") ||
+    (fs.existsSync(pathname) && fs.statSync(pathname).isDirectory())
+  ) {
     pathname = path.join(pathname, "index.html");
   }
 
   // 2.3 Security: prevent directory traversal
   const fullPath = path.resolve(pathname);
-  const rootPath = path.resolve(".");
-  if (!fullPath.startsWith(rootPath)) {
+  if (!fullPath.startsWith(absoluteBasePath)) {
     res.writeHead(403);
     res.end("Forbidden");
     return;
@@ -181,6 +188,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`🚀 Secure server running on http://127.0.0.1:${PORT}`);
+  console.log(`📁 Serving files from: ${absoluteBasePath}`);
   console.log("📋 Headers included:");
   console.log("   ✅ Cross-Origin-Embedder-Policy: require-corp");
   console.log("   ✅ Cross-Origin-Opener-Policy: same-origin");
@@ -188,7 +196,12 @@ server.listen(PORT, () => {
   console.log("");
   console.log("🎯 SharedArrayBuffer should now be supported!");
   console.log("");
-  console.log(`🌐 Visit: http://127.0.0.1:${PORT}/examples/index.html`);
+  console.log(`🌐 Visit: http://127.0.0.1:${PORT}/`);
+  console.log("");
+  console.log("📖 Usage:");
+  console.log(`   tsx secure-server.ts [base-path]`);
+  console.log(`   Default base path: ./`);
+  console.log(`   Example: tsx secure-server.ts ./examples/pure-html`);
   console.log("");
   console.log("Press Ctrl+C to stop the server");
 });

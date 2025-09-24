@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLite WASM Demo - Comprehensive Database Operations</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+</head>
+
+<body>
+    <header>
+        <h1>🗄️ SQLite WASM Comprehensive Demo</h1>
+        <p class="subtitle">A complete demonstration of SQLite WebAssembly capabilities using Web Workers</p>
+    </header>
+
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">
+            <strong>Initializing SQLite WASM...</strong>
+            <p>Loading WebAssembly module and setting up worker thread...</p>
+        </div>
+    </div>
+
+    <div id="app" class="app-container hidden">
+        <!-- Connection Status -->
+        <section class="status-panel">
+            <h3>🔌 Connection Status</h3>
+            <div id="connection-status" class="status-indicator disconnected">
+                <span class="status-dot"></span>
+                <span class="status-text">Disconnected</span>
+            </div>
+            <div class="db-info">
+                <div id="db-name">Database: Not loaded</div>
+                <div id="db-version">SQLite Version: Loading...</div>
+            </div>
+        </section>
+
+        <!-- SQL Executor -->
+        <section class="sql-panel">
+            <h3>📝 SQL Executor</h3>
+            <div class="sql-input-group">
+                <textarea id="sql-input" placeholder="Enter your SQL commands here...
+Example:
+CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT);
+INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com');
+SELECT * FROM users;"></textarea>
+                <div class="sql-controls">
+                    <button id="execute-sql" class="btn btn-primary">Execute SQL</button>
+                    <button id="clear-sql" class="btn btn-secondary">Clear</button>
+                    <div class="sql-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="auto-commit" checked>
+                            <span class="checkmark"></span>
+                            Auto-commit
+                        </label>
+                        <label class="select-label">
+                            Row Mode:
+                            <select id="row-mode">
+                                <option value="array">Array</option>
+                                <option value="object">Object</option>
+                                <option value="stmt">Statement</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="actions-panel">
+            <h3>⚡ Quick Actions</h3>
+            <div class="action-buttons">
+                <button id="create-sample-data" class="btn btn-success">Create Sample Tables</button>
+                <button id="run-performance-test" class="btn btn-info">Performance Test</button>
+                <button id="test-transactions" class="btn btn-warning">Test Transactions</button>
+                <button id="export-db" class="btn btn-accent">Export Database</button>
+                <button id="clear-db" class="btn btn-danger">Clear Database</button>
+            </div>
+        </section>
+
+        <!-- Results Panel -->
+        <section class="results-panel">
+            <h3>📊 Results</h3>
+            <div class="results-controls">
+                <button id="clear-results" class="btn btn-sm btn-secondary">Clear Results</button>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="auto-scroll" checked>
+                    <span class="checkmark"></span>
+                    Auto-scroll
+                </label>
+            </div>
+            <div id="results-container" class="results-container">
+                <div class="results-placeholder">
+                    Execute SQL commands to see results here...
+                </div>
+            </div>
+        </section>
+
+        <!-- Database Schema Explorer -->
+        <section class="schema-panel">
+            <h3>🗂️ Database Schema</h3>
+            <div class="schema-controls">
+                <button id="refresh-schema" class="btn btn-sm btn-primary">Refresh Schema</button>
+                <button id="show-indexes" class="btn btn-sm btn-secondary">Show Indexes</button>
+            </div>
+            <div id="schema-container" class="schema-container">
+                <div class="schema-placeholder">
+                    No tables found. Create some tables to explore the schema.
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Monitor -->
+        <section class="performance-panel">
+            <h3>📈 Performance Monitor</h3>
+            <div class="performance-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Total Queries:</span>
+                    <span id="total-queries" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Average Time:</span>
+                    <span id="avg-time" class="stat-value">0ms</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Query Time:</span>
+                    <span id="last-time" class="stat-value">0ms</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Rows Affected:</span>
+                    <span id="rows-affected" class="stat-value">0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Log Panel -->
+        <section class="log-panel">
+            <h3>📋 Activity Log</h3>
+            <div class="log-controls">
+                <button id="clear-log" class="btn btn-sm btn-secondary">Clear Log</button>
+                <label class="select-label">
+                    Log Level:
+                    <select id="log-level">
+                        <option value="all">All</option>
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                    </select>
+                </label>
+            </div>
+            <div id="log-container" class="log-container">
+                <div class="log-entry log-info">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-message">Welcome to SQLite WASM Demo! Initialize the database to begin.</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Error Dialog -->
+    <div id="error-dialog" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>⚠️ Error</h4>
+                <button id="close-error" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="error-message"></div>
+                <div id="error-details" class="error-details hidden"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="show-error-details" class="btn btn-sm btn-secondary">Show Details</button>
+                <button id="ok-error" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Showcase Modal -->
+    <div id="feature-showcase" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h4>🌟 SQLite WASM Features</h4>
+                <button id="close-showcase" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h5>🔄 Web Workers</h5>
+                        <p>Non-blocking database operations using dedicated worker threads</p>
+                    </div>
+                    <div class="feature-item">
+                        <h5>💾 OPFS Storage</h5>
+                        <p>Persistent storage using Origin Private File System</p>
+                    </div>
+                    <div class="feature-item">
+                        <h5>🚀 Full SQL Support</h5>
+                        <p>Complete SQLite SQL syntax with joins, indexes, triggers, and more</p>
+                    </div>
+                    <div class="feature-item">
+                        <h5>🔧 Custom Functions</h5>
+                        <p>Define JavaScript functions callable from SQL</p>
+                    </div>
+                    <div class="feature-item">
+                        <h5>📊 Multiple Row Modes</h5>
+                        <p>Flexible result formats: arrays, objects, or raw statements</p>
+                    </div>
+                    <div class="feature-item">
+                        <h5>🔒 Transactions</h5>
+                        <p>ACID transactions with rollback and savepoint support</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="start-tour" class="btn btn-primary">Start Demo Tour</button>
+                <button id="close-showcase-btn" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - Load in correct order -->
+    <script src="js/database-manager.js"></script>
+    <script src="js/ui-controller.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- Show feature showcase on first load -->
+    <script>
+        // Show feature showcase if this is the first visit
+        if (!localStorage.getItem('sqlite-demo-visited')) {
+            setTimeout(() => {
+                if (document.getElementById('feature-showcase')) {
+                    document.getElementById('feature-showcase').classList.remove('hidden');
+                    localStorage.setItem('sqlite-demo-visited', 'true');
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>

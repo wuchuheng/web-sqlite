@@ -22,7 +22,8 @@
     "preview": "vite preview",
     "prepublishOnly": "npm run build",
     "release": "pnpm publish --access public",
-    "start:examples": "tsx scripts/secure-server.ts"
+    "example:html": "tsx scripts/http-server.ts ./examples/pure-html",
+    "tmp": "pnpx http-server -p 8000 src/sqlite-wasm-3500400 -H 'Access-Control-Allow-Origin: *' -H 'Cross-Origin-Opener-Policy: same-origin' -H 'Cross-Origin-Embedder-Policy: require-corp'"
   },
   "devDependencies": {
     "typescript": "~5.8.3",
