@@ -5,8 +5,8 @@
 import type { WorkerPromiseFunction } from "./types.js";
 import { WebSQLiteError, createWorkerError } from "./errors.js";
 
-import InlineWorker from "./jswasm/sqlite3-worker1-bundler-friendly.mjs?worker&inline";
-// import InlineWorker from "./worker-with-imports?worker&inline";
+// Use custom SQLite worker that includes OPFS proxy
+import InlineWorker from "./sqlite3-worker-with-opfs.js?worker&inline";
 
 /**
  * Creates and initializes a SQLite worker with OPFS support.
@@ -14,7 +14,7 @@ import InlineWorker from "./jswasm/sqlite3-worker1-bundler-friendly.mjs?worker&i
  * @returns Promise resolving to worker promiser function
  */
 export const createSQLiteWorker = async (): Promise<WorkerPromiseFunction> => {
-  // 1. Create worker instance using public directory path
+  // 1. Create worker instance using custom worker with OPFS support
   const worker = new InlineWorker();
 
   // 2. Initialize promiser for async communication
