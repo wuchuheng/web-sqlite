@@ -1,6 +1,6 @@
 {
   "name": "@wuchuheng/web-sqlite",
-  "version": "0.1.9-beta6",
+  "version": "0.1.9-beta7",
   "type": "module",
   "description": "A browser ES module library",
   "files": [

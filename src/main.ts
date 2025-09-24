@@ -120,12 +120,38 @@
 
 // export default webSqlite;
 
-import Workder from "./workerTest.js?worker";
+// Create worker inline to avoid asset resolution issues
+const createWorker = (): Worker => {
+  const workerCode = `
+    console.log("Worker context is running.");
+
+    // Access message for main thread.
+    self.onmessage = (event) => {
+      console.log("Message received from main thread:", event.data);
+      // Echo the message back to the main thread.
+      self.postMessage(\`Worker received: \${JSON.stringify(event.data)}\`);
+    };
+  `;
+
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  return new Worker(URL.createObjectURL(blob));
+};
 
 export const workDemo = async (): Promise<void> => {
-  // 2. Handle logic.
-  const worker = new Workder();
+  // 1. Create worker from inline code
+  const worker = createWorker();
+
+  // 2. Handle logic
   worker.postMessage({ cmd: "start", msg: "hi" });
-  // Sleep 10s.
+
+  // 3. Listen for worker response (optional)
+  worker.onmessage = (event) => {
+    console.log("Main thread received:", event.data);
+  };
+
+  // Sleep 10s
   await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  // Clean up worker
+  worker.terminate();
 };
