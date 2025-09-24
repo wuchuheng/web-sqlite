@@ -1,6 +1,6 @@
 {
   "name": "@wuchuheng/web-sqlite",
-  "version": "0.1.9-beta1",
+  "version": "0.1.9-beta2",
   "type": "module",
   "description": "A browser ES module library",
   "files": [
@@ -25,7 +25,6 @@
     "start:examples": "tsx scripts/secure-server.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.5.2",
     "typescript": "~5.8.3",
     "vite": "^7.1.7",
     "vite-plugin-dts": "^4.0.0"
