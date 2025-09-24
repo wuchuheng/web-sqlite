@@ -120,38 +120,74 @@
 
 // export default webSqlite;
 
-// Create worker inline to avoid asset resolution issues
-const createWorker = (): Worker => {
-  const workerCode = `
-    console.log("Worker context is running.");
-
-    // Access message for main thread.
-    self.onmessage = (event) => {
-      console.log("Message received from main thread:", event.data);
-      // Echo the message back to the main thread.
-      self.postMessage(\`Worker received: \${JSON.stringify(event.data)}\`);
-    };
-  `;
-
-  const blob = new Blob([workerCode], { type: "application/javascript" });
-  return new Worker(URL.createObjectURL(blob));
-};
+// Modern approach: Using new URL() constructor for workers with module imports
+// This is the recommended way in latest Vite for workers that need to import other modules
 
 export const workDemo = async (): Promise<void> => {
-  // 1. Create worker from inline code
-  const worker = createWorker();
+  // 1. Create worker using modern URL constructor approach
+  // This allows the worker to use ES modules and import statements
+  const worker = new Worker(
+    new URL("./worker-with-imports.ts", import.meta.url),
+    {
+      type: "module", // Enable ES module support in worker
+    },
+  );
 
-  // 2. Handle logic
-  worker.postMessage({ cmd: "start", msg: "hi" });
-
-  // 3. Listen for worker response (optional)
+  // 2. Set up message handler
   worker.onmessage = (event) => {
     console.log("Main thread received:", event.data);
   };
 
-  // Sleep 10s
+  // 3. Send message to worker
+  worker.postMessage({ cmd: "start", msg: "Hello from main thread!" });
+
+  // 4. Wait for processing
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  // Clean up worker
+  // 5. Clean up worker
+  worker.terminate();
+};
+
+// Alternative: Dynamic import approach for complex module dependencies
+export const workDemoWithDynamicImports = async (): Promise<void> => {
+  // 1. Create worker code that uses dynamic imports
+  const workerCode = `
+    // Dynamic imports work in workers
+    const loadAndProcess = async (data) => {
+      // This would work if the modules are available
+      // const { someUtilFunction } = await import('./utils/helper.js');
+      // return someUtilFunction(data);
+      
+      // For now, just process inline
+      return \`[PROCESSED] \${data.toUpperCase()}\`;
+    };
+
+    self.onmessage = async (event) => {
+      console.log("Worker received:", event.data);
+      
+      const processed = await loadAndProcess(event.data.msg);
+      
+      self.postMessage({
+        original: event.data,
+        processed,
+        timestamp: Date.now()
+      });
+    };
+  `;
+
+  // 2. Create worker from blob
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  const worker = new Worker(URL.createObjectURL(blob));
+
+  // 3. Handle worker messages
+  worker.onmessage = (event) => {
+    console.log("Main received:", event.data);
+  };
+
+  // 4. Send data to worker
+  worker.postMessage({ cmd: "process", msg: "test data" });
+
+  // 5. Wait and cleanup
+  await new Promise((resolve) => setTimeout(resolve, 5000));
   worker.terminate();
 };

@@ -9,6 +9,18 @@ export default defineConfig({
   ],
   // Ensure WASM files are treated as assets
   assetsInclude: ["**/*.wasm"],
+
+  // Worker configuration for module support
+  worker: {
+    format: "es", // Use ES modules format for workers
+    plugins: () => [
+      // Apply the same plugins to workers
+      dts({
+        insertTypesEntry: true,
+      }),
+    ],
+  },
+
   build: {
     // Automatically clean the output directory before build
     emptyOutDir: true,
@@ -31,6 +43,10 @@ export default defineConfig({
         assetFileNames: (assetInfo) => {
           if (assetInfo.name?.endsWith(".wasm")) {
             return "assets/[name][extname]";
+          }
+          // Keep worker files with predictable names
+          if (assetInfo.name?.includes("worker")) {
+            return "assets/[name]-[hash][extname]";
           }
           return "assets/[name]-[hash][extname]";
         },
