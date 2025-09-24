@@ -4,25 +4,21 @@
 
 import type { WorkerPromiseFunction } from "./types.js";
 import { WebSQLiteError, createWorkerError } from "./errors.js";
-import Worker from "./jswasm/sqlite3-worker1-bundler-friendly.mjs?worker";
-import sqlite3WasmUrl from "./jswasm/sqlite3.wasm?url";
+
 /**
  * Creates and initializes a SQLite worker with OPFS support.
  *
  * @returns Promise resolving to worker promiser function
  */
 export const createSQLiteWorker = async (): Promise<WorkerPromiseFunction> => {
-  // 1. Create worker instance using bundler-friendly worker for proper bundling
-  const worker = new Worker();
+  // 1. Create worker instance using public directory path
+  const workerUrl = new URL('/jswasm/sqlite3-worker1-bundler-friendly.mjs', import.meta.url);
+  const worker = new Worker(workerUrl);
 
   // 2. Initialize promiser for async communication
   const promiser = await initializeWorkerPromiser(worker);
 
-  // 3. Configure WASM location for the worker
-  // This ensures the worker can find the WASM file at runtime
-  console.debug("SQLite WASM URL:", sqlite3WasmUrl);
-
-  // 4. Return promiser function
+  // 3. Return promiser function
   return promiser;
 };
 
