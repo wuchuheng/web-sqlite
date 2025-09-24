@@ -4,6 +4,13 @@
 	"main": "dist/main.mjs",
 	"module": "dist/main.mjs",
 	"types": "dist/main.d.mts",
+	"exports": {
+		".": {
+			"types": "./dist/main.d.mts",
+			"import": "./dist/main.mjs"
+		},
+		"./jswasm/*": "./dist/jswasm/*"
+	},
 	"description": "A TypeScript-first runtime library for SQLite WebAssembly with OPFS persistence and functional API.",
 	"bin": {
 		"web-sqlite": "./dist/cli.mjs"

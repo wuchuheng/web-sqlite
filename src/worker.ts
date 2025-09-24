@@ -15,7 +15,7 @@ export const createSQLiteWorker = async (): Promise<WorkerPromiseFunction> => {
   const workerUrl = new URL(
     "./jswasm/sqlite3-worker1-bundler-friendly.mjs",
     import.meta.url,
-  );
+  ).href;
   const worker = new Worker(workerUrl, { type: "module" });
 
   // 2. Initialize promiser for async communication
