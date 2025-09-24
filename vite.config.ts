@@ -28,7 +28,6 @@ export default defineConfig({
       },
     },
     // Generate sourcemaps for better debugging
-    sourcemap: true,
     // Target modern browsers
     target: "esnext",
   },

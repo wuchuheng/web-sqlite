@@ -1,6 +1,6 @@
 {
   "name": "@wuchuheng/web-sqlite",
-  "version": "0.0.1",
+  "version": "0.1.9-beta1",
   "type": "module",
   "description": "A browser ES module library",
   "files": [
@@ -20,7 +20,9 @@
     "build": "tsc && vite build --sourcemap false",
     "build:dev": "tsc && vite build --sourcemap",
     "preview": "vite preview",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "pnpm run build",
+    "release": "pnpm publish --access public"
   },
   "devDependencies": {
     "typescript": "~5.8.3",
