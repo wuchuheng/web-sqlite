@@ -123,15 +123,12 @@
 // Modern approach: Using new URL() constructor for workers with module imports
 // This is the recommended way in latest Vite for workers that need to import other modules
 
+import InlineWorker from "./worker-with-imports?worker&inline";
+
 export const workDemo = async (): Promise<void> => {
   // 1. Create worker using modern URL constructor approach
   // This allows the worker to use ES modules and import statements
-  const worker = new Worker(
-    new URL("./worker-with-imports.ts", import.meta.url),
-    {
-      type: "module", // Enable ES module support in worker
-    },
-  );
+  const worker = new InlineWorker();
 
   // 2. Set up message handler
   worker.onmessage = (event) => {
