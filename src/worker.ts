@@ -12,7 +12,10 @@ import { WebSQLiteError, createWorkerError } from "./errors.js";
  */
 export const createSQLiteWorker = async (): Promise<WorkerPromiseFunction> => {
   // 1. Create worker instance using public directory path
-  const workerUrl = new URL('/jswasm/sqlite3-worker1-bundler-friendly.mjs', import.meta.url);
+  const workerUrl = new URL(
+    "/jswasm/sqlite3-worker1-bundler-friendly.mjs",
+    import.meta.url,
+  );
   const worker = new Worker(workerUrl);
 
   // 2. Initialize promiser for async communication
