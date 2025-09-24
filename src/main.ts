@@ -1,7 +1,4 @@
-// Reference the WASM URL to avoid unused import warning
-// This ensures Vite includes the WASM file in the build
-
-/**
+/*
  * Web-SQLite - A TypeScript-first runtime library for SQLite WebAssembly.
  * Provides a clear, type-safe API with separate methods for different database operations.
  */

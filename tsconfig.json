@@ -26,7 +26,6 @@
     "noUncheckedSideEffectImports": true
   },
   "include": [
-    "src",
-    "public/jswasm"
+    "src"
   ]
 }
